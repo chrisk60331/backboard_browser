@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Models - Backboard Browser{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Models</h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Browse available AI models</p>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-4 flex gap-4">
+                <input type="text" id="searchInput" placeholder="Search models..." class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                <select id="providerFilter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                    <option value="">All Providers</option>
+                </select>
+            </div>
+            <div id="modelsList" class="space-y-4">
+                <!-- Models will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let models = [];
+let providers = [];
+
+function updateProviderFilter() {
+    const providerFilter = document.getElementById('providerFilter');
+    const uniqueProviders = [...new Set(models.map(m => m.provider).filter(p => p))].sort();
+    
+    // Clear existing options except "All Providers"
+    providerFilter.innerHTML = '<option value="">All Providers</option>';
+    
+    // Add provider options
+    uniqueProviders.forEach(provider => {
+        const option = document.createElement('option');
+        option.value = provider;
+        option.textContent = provider;
+        providerFilter.appendChild(option);
+    });
+    
+    providers = uniqueProviders;
+}
+
+async function loadModels() {
+    // Check localStorage cache first
+    const cached = localStorage.getItem('models_cache');
+    const cacheTime = localStorage.getItem('models_cache_time');
+    const now = Date.now();
+    const CACHE_TTL = 3600000; // 1 hour in milliseconds
+    
+    if (cached && cacheTime && (now - parseInt(cacheTime)) < CACHE_TTL) {
+        try {
+            models = JSON.parse(cached);
+            updateProviderFilter();
+            renderModels();
+            return; // Use cached data
+        } catch (e) {
+            // Cache invalid, fetch fresh
+        }
+    }
+    
+    try {
+        const response = await fetch('/api/models');
+        if (response.ok) {
+            const data = await response.json();
+            models = data.data || [];
+            // Cache the results
+            localStorage.setItem('models_cache', JSON.stringify(models));
+            localStorage.setItem('models_cache_time', now.toString());
+            updateProviderFilter();
+            renderModels();
+        }
+    } catch (error) {
+        console.error('Error loading models:', error);
+    }
+}
+
+function renderModels() {
+    const container = document.getElementById('modelsList');
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const selectedProvider = document.getElementById('providerFilter').value;
+    
+    let filtered = models;
+    
+    // Filter by provider
+    if (selectedProvider) {
+        filtered = filtered.filter(m => m.provider === selectedProvider);
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+        filtered = filtered.filter(m => 
+            m.name?.toLowerCase().includes(searchTerm) ||
+            m.id?.toLowerCase().includes(searchTerm) ||
+            m.provider?.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No models found</p>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(model => `
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${model.name || model.id}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">ID: ${model.id}</p>
+                    ${model.provider ? `<p class="text-sm text-gray-600 dark:text-gray-400">Provider: ${model.provider}</p>` : ''}
+                    ${model.description ? `<p class="text-sm text-gray-500 dark:text-gray-500 mt-2">${model.description}</p>` : ''}
+                    ${model.capabilities && model.capabilities.length > 0 ? `
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            ${model.capabilities.map(cap => `<span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded">${cap}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    ${model.max_tokens ? `<p class="text-xs text-gray-500 dark:text-gray-500 mt-2">Max tokens: ${model.max_tokens}</p>` : ''}
+                    ${model.supports_streaming !== undefined ? `<p class="text-xs text-gray-500 dark:text-gray-500">Streaming: ${model.supports_streaming ? 'Yes' : 'No'}</p>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', renderModels);
+document.getElementById('providerFilter').addEventListener('change', renderModels);
+
+loadModels();
+</script>
+{% endblock %}

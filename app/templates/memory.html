@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Memory - Backboard Browser{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Memory</h1>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Store and retrieve memories</p>
+        </div>
+        <button onclick="showCreateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            Store Memory
+        </button>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-4 flex items-center space-x-4">
+                <input type="text" id="searchInput" placeholder="Search memories..." class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" oninput="filterMemories()">
+                <div class="flex items-center space-x-2">
+                    <div id="loadingSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                    <span id="memoryCount" class="text-sm text-gray-600 dark:text-gray-400">Loading...</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-900">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Assistant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Content</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memoryList" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- Memories will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div id="memoryModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Store Memory</h3>
+            <form id="memoryForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content</label>
+                    <textarea id="memoryContent" rows="6" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags (comma-separated)</label>
+                    <input type="text" id="memoryTags" placeholder="tag1, tag2, tag3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="hideModal()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Store</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let allMemories = [];
+let displayedMemories = [];
+
+async function loadMemories() {
+    const container = document.getElementById('memoryList');
+    const spinner = document.getElementById('loadingSpinner');
+    const countEl = document.getElementById('memoryCount');
+    
+    // Show loading state
+    spinner.classList.remove('hidden');
+    container.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Loading memories...</td></tr>';
+    allMemories = [];
+    displayedMemories = [];
+    
+    try {
+        // First, get all assistants
+        const assistantsRes = await fetch('/api/assistants?limit=10000');
+        if (!assistantsRes.ok) {
+            throw new Error('Failed to fetch assistants');
+        }
+        
+        const assistantsData = await assistantsRes.json();
+        const assistants = assistantsData.data || [];
+        
+        // Filter out cache assistant
+        const cacheAssistantName = "bb_browser_cache";
+        const filteredAssistants = assistants.filter(a => a.name !== cacheAssistantName);
+        
+        countEl.textContent = `Loading from ${filteredAssistants.length} assistants...`;
+        
+        // Fetch memories from each assistant in parallel
+        const memoryPromises = filteredAssistants.map(async (assistant) => {
+            try {
+                const memRes = await fetch(`/api/assistants/${assistant.id}/memories`);
+                if (memRes.ok) {
+                    const memData = await memRes.json();
+                    const memories = memData.data || [];
+                    return memories.map(m => ({
+                        ...m,
+                        assistant_id: assistant.id,
+                        assistant_name: assistant.name
+                    }));
+                }
+                return [];
+            } catch (error) {
+                console.error(`Error fetching memories for ${assistant.name}:`, error);
+                return [];
+            }
+        });
+        
+        // Process results as they come in
+        let processedCount = 0;
+        for (const promise of memoryPromises) {
+            const memories = await promise;
+            allMemories.push(...memories);
+            processedCount++;
+            
+            // Update count and render incrementally
+            countEl.textContent = `Loaded ${allMemories.length} memories from ${processedCount}/${filteredAssistants.length} assistants...`;
+            filterMemories(); // Re-render with new memories
+        }
+        
+        spinner.classList.add('hidden');
+        countEl.textContent = `Showing ${displayedMemories.length} of ${allMemories.length} memories`;
+        filterMemories();
+        
+    } catch (error) {
+        console.error('Error loading memories:', error);
+        spinner.classList.add('hidden');
+        countEl.textContent = 'Error loading memories';
+        container.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading memories. Please try again.</td></tr>';
+    }
+}
+
+function filterMemories() {
+    const container = document.getElementById('memoryList');
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    const countEl = document.getElementById('memoryCount');
+    
+    // Filter memories based on search term
+    displayedMemories = allMemories.filter(m => {
+        if (!searchTerm) return true;
+        const contentMatch = m.content?.toLowerCase().includes(searchTerm);
+        const tagMatch = m.tags && m.tags.some(t => t.toLowerCase().includes(searchTerm));
+        const assistantMatch = m.assistant_name?.toLowerCase().includes(searchTerm);
+        return contentMatch || tagMatch || assistantMatch;
+    });
+    
+    // Update count
+    if (allMemories.length > 0) {
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner && !spinner.classList.contains('hidden')) {
+            // Still loading, don't update final count yet
+        } else {
+            countEl.textContent = searchTerm 
+                ? `Showing ${displayedMemories.length} of ${allMemories.length} memories`
+                : `Total: ${allMemories.length} memories`;
+        }
+    }
+    
+    // Render table
+    if (displayedMemories.length === 0 && allMemories.length === 0) {
+        container.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No memories found</td></tr>';
+        return;
+    }
+    
+    if (displayedMemories.length === 0) {
+        container.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No memories match your search</td></tr>';
+        return;
+    }
+    
+    container.innerHTML = displayedMemories.map(memory => {
+        const content = (memory.content || 'No content').substring(0, 200) + (memory.content && memory.content.length > 200 ? '...' : '');
+        const tags = memory.tags && memory.tags.length > 0 
+            ? memory.tags.map(tag => `<span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded mr-1">${escapeHtml(tag)}</span>`).join('')
+            : '<span class="text-gray-400 dark:text-gray-500 text-xs">—</span>';
+        
+        return `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    ${escapeHtml(memory.assistant_name || 'Unknown')}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-md">
+                    <div class="truncate" title="${escapeHtml(memory.content || '')}">${escapeHtml(content)}</div>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex flex-wrap">${tags}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick="deleteMemory('${memory.id}', '${memory.assistant_id || ''}')" 
+                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showCreateModal() {
+    document.getElementById('memoryForm').reset();
+    document.getElementById('memoryModal').classList.remove('hidden');
+}
+
+function hideModal() {
+    document.getElementById('memoryModal').classList.add('hidden');
+}
+
+async function deleteMemory(id, assistantId) {
+    if (!confirm('Are you sure you want to delete this memory?')) return;
+    
+    if (!assistantId) {
+        alert('Cannot delete: assistant ID missing');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/memory/${id}?assistant_id=${assistantId}`, {method: 'DELETE'});
+        if (response.ok) {
+            // Remove from local arrays
+            allMemories = allMemories.filter(m => m.id !== id);
+            filterMemories(); // Re-render
+        } else {
+            alert('Failed to delete memory');
+        }
+    } catch (error) {
+        console.error('Error deleting memory:', error);
+        alert('Error deleting memory');
+    }
+}
+
+document.getElementById('memoryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const tags = document.getElementById('memoryTags').value
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t);
+
+    const data = {
+        content: document.getElementById('memoryContent').value,
+        tags: tags.length > 0 ? tags : undefined
+    };
+
+    try {
+        const response = await fetch('/api/memory', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            hideModal();
+            // Reload all memories after creating new one
+            loadMemories();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Failed to store memory');
+        }
+    } catch (error) {
+        console.error('Error storing memory:', error);
+        alert('Error storing memory');
+    }
+});
+
+// Search is now handled by oninput in the input field, no need for Enter handler
+
+loadMemories();
+</script>
+{% endblock %}
