@@ -1,1 +1,271 @@
 /* Custom styles */
+
+/* ========================================
+   Floating Icons Background Animation
+   ======================================== */
+
+.floating-icons-container {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.floating-icon {
+    position: absolute;
+    stroke: #64748b;
+    opacity: 0.10;
+    will-change: transform;
+}
+
+/* Dark mode - slightly more visible */
+html.dark .floating-icon {
+    stroke: #94a3b8;
+    opacity: 0.12;
+}
+
+/* Float animation variants - slow, dreamy movement */
+@keyframes float-drift-1 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(30px, -40px) rotate(5deg); }
+    50% { transform: translate(-20px, -80px) rotate(-3deg); }
+    75% { transform: translate(25px, -40px) rotate(3deg); }
+}
+
+@keyframes float-drift-2 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(-40px, -60px) rotate(-6deg); }
+    66% { transform: translate(20px, -100px) rotate(4deg); }
+}
+
+@keyframes float-drift-3 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(50px, -30px) rotate(8deg); }
+    40% { transform: translate(30px, -70px) rotate(-2deg); }
+    60% { transform: translate(-10px, -90px) rotate(5deg); }
+    80% { transform: translate(20px, -50px) rotate(-4deg); }
+}
+
+@keyframes float-drift-4 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(-35px, -120px) rotate(-7deg); }
+}
+
+/* Individual icon positioning and animation assignments */
+.float-1 {
+    width: 48px;
+    height: 48px;
+    top: 15%;
+    left: 8%;
+    animation: float-drift-1 45s ease-in-out infinite;
+}
+
+.float-2 {
+    width: 36px;
+    height: 36px;
+    top: 60%;
+    left: 15%;
+    animation: float-drift-2 52s ease-in-out infinite;
+    animation-delay: -8s;
+}
+
+.float-3 {
+    width: 56px;
+    height: 56px;
+    top: 25%;
+    left: 75%;
+    animation: float-drift-3 48s ease-in-out infinite;
+    animation-delay: -15s;
+}
+
+.float-4 {
+    width: 40px;
+    height: 40px;
+    top: 70%;
+    left: 80%;
+    animation: float-drift-1 55s ease-in-out infinite;
+    animation-delay: -22s;
+}
+
+.float-5 {
+    width: 44px;
+    height: 44px;
+    top: 45%;
+    left: 5%;
+    animation: float-drift-4 50s ease-in-out infinite;
+    animation-delay: -5s;
+}
+
+.float-6 {
+    width: 32px;
+    height: 32px;
+    top: 80%;
+    left: 45%;
+    animation: float-drift-2 58s ease-in-out infinite;
+    animation-delay: -30s;
+}
+
+.float-7 {
+    width: 52px;
+    height: 52px;
+    top: 35%;
+    left: 90%;
+    animation: float-drift-3 42s ease-in-out infinite;
+    animation-delay: -12s;
+}
+
+.float-8 {
+    width: 28px;
+    height: 28px;
+    top: 10%;
+    left: 55%;
+    animation: float-drift-1 60s ease-in-out infinite;
+    animation-delay: -38s;
+}
+
+.float-9 {
+    width: 64px;
+    height: 64px;
+    top: 85%;
+    left: 25%;
+    animation: float-drift-4 47s ease-in-out infinite;
+    animation-delay: -20s;
+}
+
+.float-10 {
+    width: 38px;
+    height: 38px;
+    top: 50%;
+    left: 65%;
+    animation: float-drift-2 53s ease-in-out infinite;
+    animation-delay: -45s;
+}
+
+.float-11 {
+    width: 42px;
+    height: 42px;
+    top: 20%;
+    left: 35%;
+    animation: float-drift-3 56s ease-in-out infinite;
+    animation-delay: -25s;
+}
+
+.float-12 {
+    width: 30px;
+    height: 30px;
+    top: 65%;
+    left: 50%;
+    animation: float-drift-1 49s ease-in-out infinite;
+    animation-delay: -35s;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .floating-icon {
+        animation: none !important;
+    }
+}
+
+/* ========================================
+   Card & UI Animations
+   ======================================== */
+
+/* Smooth card hover lift animation */
+.group:hover .transform {
+    transform: translateY(-4px);
+}
+
+/* Modern spinner animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 0.8s linear infinite;
+}
+
+/* Subtle gradient text shimmer on hover */
+@keyframes gradient-shift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Card entrance animation */
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.grid > a {
+    animation: fade-up 0.5s ease-out forwards;
+}
+
+.grid > a:nth-child(1) { animation-delay: 0.05s; }
+.grid > a:nth-child(2) { animation-delay: 0.1s; }
+.grid > a:nth-child(3) { animation-delay: 0.15s; }
+.grid > a:nth-child(4) { animation-delay: 0.2s; }
+.grid > a:nth-child(5) { animation-delay: 0.25s; }
+
+/* Smooth focus states for accessibility */
+a:focus-visible {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+    border-radius: 0.75rem;
+}
+
+/* Header nav hover transition enhancement */
+nav a {
+    position: relative;
+}
+
+/* Smooth scrollbar for dark mode */
+@media (prefers-color-scheme: dark) {
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #1f2937;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+    }
+}
+
+html.dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
