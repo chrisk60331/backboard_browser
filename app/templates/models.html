@@ -4,21 +4,60 @@
 
 {% block content %}
 <div class="px-4 py-6 sm:px-0">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Models</h1>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Browse available AI models</p>
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Models</h1>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Browse available AI models</p>
+        </div>
+        <!-- View Mode Selector -->
+        <div class="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <button onclick="setViewMode('icons')" id="viewmode-icons" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Icons">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            </button>
+            <button onclick="setViewMode('list')" id="viewmode-list" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="List">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            </button>
+            <button onclick="setViewMode('columns')" id="viewmode-columns" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Columns">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+            </button>
+            <button onclick="setViewMode('gallery')" id="viewmode-gallery" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Gallery">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </button>
+        </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         <div class="px-4 py-5 sm:p-6">
-            <div class="mb-4 flex gap-4">
-                <input type="text" id="searchInput" placeholder="Search models..." class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                <select id="providerFilter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                    <option value="">All Providers</option>
-                </select>
+            <div class="mb-4 space-y-3">
+                <div class="flex gap-4">
+                    <input type="text" id="searchInput" placeholder="Search models..." class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                    <select id="providerFilter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                        <option value="">All Providers</option>
+                    </select>
+                </div>
+                <div class="flex gap-4 flex-wrap items-center">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600 dark:text-gray-400">Min Tokens:</label>
+                        <input type="number" id="minTokensFilter" placeholder="0" class="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600 dark:text-gray-400">Max Tokens:</label>
+                        <input type="number" id="maxTokensFilter" placeholder="∞" class="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600 dark:text-gray-400">Streaming:</label>
+                        <select id="streamingFilter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            <option value="">Any</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div id="loadingSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                    <span id="modelCount" class="text-sm text-gray-600 dark:text-gray-400"></span>
+                </div>
             </div>
-            <div id="modelsList" class="space-y-4">
-                <!-- Models will be loaded here -->
+            <div id="modelsContainer">
+                <!-- Content will be loaded here based on view mode -->
             </div>
         </div>
     </div>
@@ -27,15 +66,85 @@
 <script>
 let models = [];
 let providers = [];
+let currentViewMode = 'list';
+let sortColumn = 'name';
+let sortDirection = 'asc';
+let selectedProvider = '';
+const PAGE_KEY = 'viewmode_models';
+
+// View Mode Functions
+function getViewMode() {
+    return localStorage.getItem(PAGE_KEY) || 'list';
+}
+
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem(PAGE_KEY, mode);
+    updateViewModeButtons();
+    renderModels();
+}
+
+function updateViewModeButtons() {
+    const modes = ['icons', 'list', 'columns', 'gallery'];
+    modes.forEach(mode => {
+        const btn = document.getElementById(`viewmode-${mode}`);
+        if (btn) {
+            if (mode === currentViewMode) {
+                btn.classList.add('bg-white', 'dark:bg-gray-600', 'shadow-sm');
+                btn.classList.remove('hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            } else {
+                btn.classList.remove('bg-white', 'dark:bg-gray-600', 'shadow-sm');
+                btn.classList.add('hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            }
+        }
+    });
+}
+
+// Sort Functions
+function sortBy(column) {
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'asc';
+    }
+    renderModels();
+}
+
+function getSortIndicator(column) {
+    if (sortColumn !== column) return '';
+    return sortDirection === 'asc' ? '↑' : '↓';
+}
+
+function sortData(data) {
+    return [...data].sort((a, b) => {
+        let aVal = a[sortColumn];
+        let bVal = b[sortColumn];
+        
+        // Handle null/undefined
+        if (aVal == null) aVal = '';
+        if (bVal == null) bVal = '';
+        
+        // Handle numbers
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        
+        // Handle booleans
+        if (typeof aVal === 'boolean') aVal = aVal ? 'Yes' : 'No';
+        if (typeof bVal === 'boolean') bVal = bVal ? 'Yes' : 'No';
+        
+        // String comparison
+        const comparison = String(aVal).localeCompare(String(bVal));
+        return sortDirection === 'asc' ? comparison : -comparison;
+    });
+}
 
 function updateProviderFilter() {
     const providerFilter = document.getElementById('providerFilter');
     const uniqueProviders = [...new Set(models.map(m => m.provider).filter(p => p))].sort();
     
-    // Clear existing options except "All Providers"
     providerFilter.innerHTML = '<option value="">All Providers</option>';
-    
-    // Add provider options
     uniqueProviders.forEach(provider => {
         const option = document.createElement('option');
         option.value = provider;
@@ -47,52 +156,62 @@ function updateProviderFilter() {
 }
 
 async function loadModels() {
+    const spinner = document.getElementById('loadingSpinner');
+    const countEl = document.getElementById('modelCount');
+    const container = document.getElementById('modelsContainer');
+    
     // Check localStorage cache first
     const cached = localStorage.getItem('models_cache');
     const cacheTime = localStorage.getItem('models_cache_time');
     const now = Date.now();
-    const CACHE_TTL = 3600000; // 1 hour in milliseconds
+    const CACHE_TTL = 3600000;
     
     if (cached && cacheTime && (now - parseInt(cacheTime)) < CACHE_TTL) {
         try {
             models = JSON.parse(cached);
             updateProviderFilter();
             renderModels();
-            return; // Use cached data
-        } catch (e) {
-            // Cache invalid, fetch fresh
-        }
+            return;
+        } catch (e) {}
     }
+    
+    spinner.classList.remove('hidden');
+    countEl.textContent = 'Loading models...';
+    container.innerHTML = '<div class="flex items-center justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div><span class="ml-3 text-gray-600 dark:text-gray-400">Loading models...</span></div>';
     
     try {
         const response = await fetch('/api/models');
         if (response.ok) {
             const data = await response.json();
             models = data.data || [];
-            // Cache the results
             localStorage.setItem('models_cache', JSON.stringify(models));
             localStorage.setItem('models_cache_time', now.toString());
             updateProviderFilter();
             renderModels();
+        } else {
+            container.innerHTML = '<p class="text-red-500 py-4">Failed to load models</p>';
         }
     } catch (error) {
         console.error('Error loading models:', error);
+        container.innerHTML = '<p class="text-red-500 py-4">Error loading models</p>';
+    } finally {
+        spinner.classList.add('hidden');
     }
 }
 
-function renderModels() {
-    const container = document.getElementById('modelsList');
+function getFilteredModels() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const selectedProvider = document.getElementById('providerFilter').value;
+    const providerFilterVal = document.getElementById('providerFilter').value;
+    const minTokens = parseInt(document.getElementById('minTokensFilter').value) || 0;
+    const maxTokens = parseInt(document.getElementById('maxTokensFilter').value) || Infinity;
+    const streamingFilter = document.getElementById('streamingFilter').value;
     
     let filtered = models;
     
-    // Filter by provider
-    if (selectedProvider) {
-        filtered = filtered.filter(m => m.provider === selectedProvider);
+    if (providerFilterVal) {
+        filtered = filtered.filter(m => m.provider === providerFilterVal);
     }
     
-    // Filter by search term
     if (searchTerm) {
         filtered = filtered.filter(m => 
             m.name?.toLowerCase().includes(searchTerm) ||
@@ -100,36 +219,229 @@ function renderModels() {
             m.provider?.toLowerCase().includes(searchTerm)
         );
     }
+    
+    if (minTokens > 0 || maxTokens < Infinity) {
+        filtered = filtered.filter(m => {
+            const tokens = m.max_tokens || 0;
+            return tokens >= minTokens && tokens <= maxTokens;
+        });
+    }
+    
+    if (streamingFilter !== '') {
+        const supportsStreaming = streamingFilter === 'true';
+        filtered = filtered.filter(m => m.supports_streaming === supportsStreaming);
+    }
+    
+    return sortData(filtered);
+}
+
+function renderModels() {
+    const container = document.getElementById('modelsContainer');
+    const countEl = document.getElementById('modelCount');
+    const filtered = getFilteredModels();
+    
+    countEl.textContent = `Showing ${filtered.length} of ${models.length} models`;
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No models found</p>';
+        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 py-4">No models found</p>';
         return;
     }
 
-    container.innerHTML = filtered.map(model => `
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${model.name || model.id}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">ID: ${model.id}</p>
-                    ${model.provider ? `<p class="text-sm text-gray-600 dark:text-gray-400">Provider: ${model.provider}</p>` : ''}
-                    ${model.description ? `<p class="text-sm text-gray-500 dark:text-gray-500 mt-2">${model.description}</p>` : ''}
-                    ${model.capabilities && model.capabilities.length > 0 ? `
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            ${model.capabilities.map(cap => `<span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded">${cap}</span>`).join('')}
+    switch (currentViewMode) {
+        case 'icons':
+            renderIconsView(container, filtered);
+            break;
+        case 'list':
+            renderListView(container, filtered);
+            break;
+        case 'columns':
+            renderColumnsView(container, filtered);
+            break;
+        case 'gallery':
+            renderGalleryView(container, filtered);
+            break;
+        default:
+            renderListView(container, filtered);
+    }
+}
+
+function renderIconsView(container, data) {
+    container.innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            ${data.map(model => `
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md transition-all cursor-pointer text-center">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                        ${(model.name || model.id || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <h3 class="font-medium text-gray-900 dark:text-white text-sm truncate" title="${model.name || model.id}">${model.name || model.id}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${model.provider || 'Unknown'}</p>
+                    ${model.supports_streaming ? '<span class="inline-block mt-2 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">Streaming</span>' : ''}
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderListView(container, data) {
+    container.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('name')">
+                            <div class="flex items-center">Name <span class="ml-1">${getSortIndicator('name')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('id')">
+                            <div class="flex items-center">ID <span class="ml-1">${getSortIndicator('id')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('provider')">
+                            <div class="flex items-center">Provider <span class="ml-1">${getSortIndicator('provider')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('max_tokens')">
+                            <div class="flex items-center">Max Tokens <span class="ml-1">${getSortIndicator('max_tokens')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('supports_streaming')">
+                            <div class="flex items-center">Streaming <span class="ml-1">${getSortIndicator('supports_streaming')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capabilities</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    ${data.map(model => `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white max-w-48">
+                                <div class="truncate" title="${model.name || model.id}">${model.name || model.id}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 font-mono text-xs max-w-48">
+                                <div class="truncate" title="${model.id}">${model.id}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${model.provider || '—'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${model.max_tokens ? model.max_tokens.toLocaleString() : '—'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                ${model.supports_streaming ? '<span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">Yes</span>' : '<span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">No</span>'}
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <div class="flex flex-wrap gap-1">
+                                    ${(model.capabilities || []).map(cap => `<span class="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded">${cap}</span>`).join('')}
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderColumnsView(container, data) {
+    const providerGroups = {};
+    data.forEach(model => {
+        const provider = model.provider || 'Unknown';
+        if (!providerGroups[provider]) providerGroups[provider] = [];
+        providerGroups[provider].push(model);
+    });
+    
+    const sortedProviders = Object.keys(providerGroups).sort();
+    
+    container.innerHTML = `
+        <div class="flex border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden" style="height: 500px;">
+            <!-- Providers Column -->
+            <div class="w-48 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+                <div class="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700">Providers</div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <div onclick="selectColumnProvider('')" class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedProvider === '' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
+                        <div class="flex justify-between items-center">
+                            <span>All Providers</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${data.length}</span>
                         </div>
-                    ` : ''}
-                    ${model.max_tokens ? `<p class="text-xs text-gray-500 dark:text-gray-500 mt-2">Max tokens: ${model.max_tokens}</p>` : ''}
-                    ${model.supports_streaming !== undefined ? `<p class="text-xs text-gray-500 dark:text-gray-500">Streaming: ${model.supports_streaming ? 'Yes' : 'No'}</p>` : ''}
+                    </div>
+                    ${sortedProviders.map(provider => `
+                        <div onclick="selectColumnProvider('${provider}')" class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedProvider === provider ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
+                            <div class="flex justify-between items-center">
+                                <span class="truncate">${provider}</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">${providerGroups[provider].length}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <!-- Models Column -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">Models</div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    ${(selectedProvider ? providerGroups[selectedProvider] || [] : data).map(model => `
+                        <div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-medium text-gray-900 dark:text-white truncate">${model.name || model.id}</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">${model.id}</p>
+                                </div>
+                                <div class="flex items-center gap-2 ml-4">
+                                    ${model.max_tokens ? `<span class="text-xs text-gray-500 dark:text-gray-400">${(model.max_tokens/1000).toFixed(0)}K</span>` : ''}
+                                    ${model.supports_streaming ? '<span class="w-2 h-2 bg-green-500 rounded-full" title="Streaming"></span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
 }
 
+function selectColumnProvider(provider) {
+    selectedProvider = provider;
+    renderModels();
+}
+
+function renderGalleryView(container, data) {
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            ${data.map(model => `
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                    <div class="h-24 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span class="text-4xl font-bold text-white">${(model.name || model.id || '?').charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${model.name || model.id}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">${model.id}</p>
+                        <div class="mt-3 space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Provider</span>
+                                <span class="text-gray-900 dark:text-white">${model.provider || 'Unknown'}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Max Tokens</span>
+                                <span class="text-gray-900 dark:text-white">${model.max_tokens ? model.max_tokens.toLocaleString() : '—'}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Streaming</span>
+                                <span>${model.supports_streaming ? '<span class="text-green-600 dark:text-green-400">Yes</span>' : '<span class="text-gray-400">No</span>'}</span>
+                            </div>
+                        </div>
+                        ${model.capabilities && model.capabilities.length > 0 ? `
+                            <div class="mt-3 flex flex-wrap gap-1">
+                                ${model.capabilities.map(cap => `<span class="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded">${cap}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        ${model.description ? `<p class="mt-3 text-sm text-gray-600 dark:text-gray-400">${model.description}</p>` : ''}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Event Listeners
 document.getElementById('searchInput').addEventListener('input', renderModels);
 document.getElementById('providerFilter').addEventListener('change', renderModels);
+document.getElementById('minTokensFilter').addEventListener('input', renderModels);
+document.getElementById('maxTokensFilter').addEventListener('input', renderModels);
+document.getElementById('streamingFilter').addEventListener('change', renderModels);
 
+// Initialize
+currentViewMode = getViewMode();
+updateViewModeButtons();
 loadModels();
 </script>
 {% endblock %}

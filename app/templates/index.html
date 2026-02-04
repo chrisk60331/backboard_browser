@@ -215,8 +215,21 @@ async function loadCounts() {
         // Threads count
         if (threadsRes.ok) {
             const data = await threadsRes.json();
-            hideSpinner('threadsSpinner');
-            showCount('threadsCount', data.count || '0');
+            // If count is exactly 1000 and was cached, force refresh to get true count
+            if (data.count === 1000 && data.cached) {
+                const refreshRes = await fetch('/api/cache/threads-count?refresh=true').catch(() => ({ok: false}));
+                if (refreshRes.ok) {
+                    const refreshData = await refreshRes.json();
+                    hideSpinner('threadsSpinner');
+                    showCount('threadsCount', refreshData.count || '0');
+                } else {
+                    hideSpinner('threadsSpinner');
+                    showCount('threadsCount', data.count || '0');
+                }
+            } else {
+                hideSpinner('threadsSpinner');
+                showCount('threadsCount', data.count || '0');
+            }
         } else {
             hideSpinner('threadsSpinner');
             showCount('threadsCount', '-');

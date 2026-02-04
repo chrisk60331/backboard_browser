@@ -181,15 +181,21 @@ def get_threads_count():
         
         cache = BackboardCache(api_key=api_key)
         
-        # Try to get from cache
-        cached_count = cache.get('threads_count_total')
-        if cached_count is not None:
-            return jsonify({'count': cached_count, 'cached': True})
+        # Check for force refresh parameter
+        force_refresh = request.args.get('refresh', '').lower() == 'true'
         
-        # Compute total threads count
+        # Try to get from cache (unless force refresh)
+        if not force_refresh:
+            cached_count = cache.get('threads_count_total')
+            if cached_count is not None:
+                return jsonify({'count': cached_count, 'cached': True})
+        else:
+            # Delete existing cache entry
+            cache.delete('threads_count_total')
+        
+        # Compute total threads count using dedicated method that handles pagination
         service = BackboardService(api_key=api_key)
-        threads = service.list_threads()
-        total_count = len(threads)
+        total_count = service.count_threads()
         
         # Cache the result
         cache.set('threads_count_total', total_count, ttl=3600)

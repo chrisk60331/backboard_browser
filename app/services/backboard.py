@@ -452,12 +452,68 @@ class BackboardService:
         return True
     
     # Thread methods
-    def list_threads(self) -> List[Thread]:
-        """List all threads."""
+    def count_threads(self) -> int:
+        """Get total count of threads across all pages."""
+        import requests
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
+        try:
+            # First request to get total count
+            response = requests.get(
+                'https://app.backboard.io/api/threads',
+                headers={'X-API-Key': self.api_key},
+                params={'skip': 0, 'limit': 1}
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Check if API returns a total count
+            if isinstance(data, dict) and 'total' in data:
+                return data['total']
+            
+            # If no total in response, paginate to count all
+            if isinstance(data, list):
+                # Start counting - first batch already counted
+                total_count = len(data)
+                skip = len(data)
+                batch_size = 1000
+                
+                while True:
+                    resp = requests.get(
+                        'https://app.backboard.io/api/threads',
+                        headers={'X-API-Key': self.api_key},
+                        params={'skip': skip, 'limit': batch_size}
+                    )
+                    resp.raise_for_status()
+                    batch = resp.json()
+                    
+                    if isinstance(batch, list):
+                        batch_len = len(batch)
+                        if batch_len == 0:
+                            break
+                        total_count += batch_len
+                        skip += batch_len
+                        if batch_len < batch_size:
+                            break
+                    else:
+                        break
+                
+                return total_count
+            
+            return 0
+        except Exception as e:
+            print(f"Error counting threads: {e}")
+            return 0
+    
+    def list_threads(self, assistant_id: Optional[str] = None, skip: int = 0, limit: int = 1000) -> List[Thread]:
+        """List threads, optionally filtered by assistant_id."""
         async def _list():
             async with BackboardClient(api_key=self.api_key) as client:
                 # Use raw request to avoid SDK model validation (MessageRole enum)
-                response = await client._make_request("GET", "/threads", params={"skip": 0, "limit": 1000})
+                if assistant_id:
+                    response = await client._make_request("GET", f"/assistants/{assistant_id}/threads", params={"limit": 10000})
+                else:
+                    response = await client._make_request("GET", "/threads", params={"skip": skip, "limit": limit})
                 return response.json()
         
         result = self._run_async(_list())

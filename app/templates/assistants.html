@@ -9,18 +9,39 @@
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Assistants</h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Manage your AI assistants</p>
         </div>
-        <button onclick="showCreateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            Create Assistant
-        </button>
+        <div class="flex items-center gap-4">
+            <button onclick="showCreateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Create Assistant
+            </button>
+            <!-- View Mode Selector -->
+            <div class="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                <button onclick="setViewMode('icons')" id="viewmode-icons" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Icons">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                </button>
+                <button onclick="setViewMode('list')" id="viewmode-list" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="List">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                </button>
+                <button onclick="setViewMode('columns')" id="viewmode-columns" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Columns">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                </button>
+                <button onclick="setViewMode('gallery')" id="viewmode-gallery" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Gallery">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         <div class="px-4 py-5 sm:p-6">
-            <div class="mb-4">
+            <div class="mb-4 space-y-3">
                 <input type="text" id="searchInput" placeholder="Search assistants..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                <div class="flex items-center space-x-2">
+                    <div id="loadingSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                    <span id="assistantCount" class="text-sm text-gray-600 dark:text-gray-400"></span>
+                </div>
             </div>
-            <div id="assistantsList" class="space-y-4">
-                <!-- Assistants will be loaded here -->
+            <div id="assistantsContainer">
+                <!-- Assistants will be loaded here based on view mode -->
             </div>
         </div>
     </div>
@@ -56,55 +77,293 @@
 
 <script>
 let assistants = [];
+let currentViewMode = 'list';
+let sortColumn = 'name';
+let sortDirection = 'asc';
+let selectedModel = '';
+const PAGE_KEY = 'viewmode_assistants';
+
+// View Mode Functions
+function getViewMode() {
+    return localStorage.getItem(PAGE_KEY) || 'list';
+}
+
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem(PAGE_KEY, mode);
+    updateViewModeButtons();
+    renderAssistants();
+}
+
+function updateViewModeButtons() {
+    const modes = ['icons', 'list', 'columns', 'gallery'];
+    modes.forEach(mode => {
+        const btn = document.getElementById(`viewmode-${mode}`);
+        if (btn) {
+            if (mode === currentViewMode) {
+                btn.classList.add('bg-white', 'dark:bg-gray-600', 'shadow-sm');
+                btn.classList.remove('hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            } else {
+                btn.classList.remove('bg-white', 'dark:bg-gray-600', 'shadow-sm');
+                btn.classList.add('hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            }
+        }
+    });
+}
+
+// Sort Functions
+function sortBy(column) {
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'asc';
+    }
+    renderAssistants();
+}
+
+function getSortIndicator(column) {
+    if (sortColumn !== column) return '';
+    return sortDirection === 'asc' ? '↑' : '↓';
+}
+
+function sortData(data) {
+    return [...data].sort((a, b) => {
+        let aVal = a[sortColumn];
+        let bVal = b[sortColumn];
+        
+        if (aVal == null) aVal = '';
+        if (bVal == null) bVal = '';
+        
+        const comparison = String(aVal).localeCompare(String(bVal));
+        return sortDirection === 'asc' ? comparison : -comparison;
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 async function loadAssistants() {
+    const spinner = document.getElementById('loadingSpinner');
+    const countEl = document.getElementById('assistantCount');
+    const container = document.getElementById('assistantsContainer');
+    
+    spinner.classList.remove('hidden');
+    countEl.textContent = 'Loading assistants...';
+    container.innerHTML = '<div class="flex items-center justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div><span class="ml-3 text-gray-600 dark:text-gray-400">Loading assistants...</span></div>';
+    
     try {
         const response = await fetch('/api/assistants');
         if (response.ok) {
             const data = await response.json();
             assistants = data.data || [];
             renderAssistants();
+        } else {
+            container.innerHTML = '<p class="text-red-500 py-4">Failed to load assistants</p>';
         }
     } catch (error) {
         console.error('Error loading assistants:', error);
+        container.innerHTML = '<p class="text-red-500 py-4">Error loading assistants</p>';
+    } finally {
+        spinner.classList.add('hidden');
     }
 }
 
-function renderAssistants() {
-    const container = document.getElementById('assistantsList');
+function getFilteredAssistants() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = assistants.filter(a => 
+    let filtered = assistants.filter(a => 
         a.name?.toLowerCase().includes(searchTerm) ||
         a.model?.toLowerCase().includes(searchTerm)
     );
+    return sortData(filtered);
+}
+
+function renderAssistants() {
+    const container = document.getElementById('assistantsContainer');
+    const countEl = document.getElementById('assistantCount');
+    const filtered = getFilteredAssistants();
+    
+    countEl.textContent = `Showing ${filtered.length} of ${assistants.length} assistants`;
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No assistants found</p>';
+        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 py-4">No assistants found</p>';
         return;
     }
 
-    container.innerHTML = filtered.map(assistant => {
-        const id = String(assistant.id || '').replace(/'/g, "\\'");
-        const name = String(assistant.name || 'Unnamed').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const prompt = assistant.system_prompt ? String(assistant.system_prompt).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
-        return `
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" data-assistant-id="${id}" onclick="viewAssistant('${id}')">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${name}</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">ID: ${id || 'N/A'}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Model: ${assistant.model || 'N/A'}</p>
-                    ${prompt ? `<p class="text-sm text-gray-500 dark:text-gray-500 mt-2 line-clamp-2">${prompt}</p>` : ''}
+    switch (currentViewMode) {
+        case 'icons':
+            renderIconsView(container, filtered);
+            break;
+        case 'list':
+            renderListView(container, filtered);
+            break;
+        case 'columns':
+            renderColumnsView(container, filtered);
+            break;
+        case 'gallery':
+            renderGalleryView(container, filtered);
+            break;
+        default:
+            renderListView(container, filtered);
+    }
+}
+
+function renderIconsView(container, data) {
+    container.innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            ${data.map(assistant => `
+                <div onclick="viewAssistant('${assistant.id}')" class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md transition-all cursor-pointer text-center group">
+                    <div class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                        ${(assistant.name || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <h3 class="font-medium text-gray-900 dark:text-white text-sm truncate" title="${escapeHtml(assistant.name || 'Unnamed')}">${escapeHtml(assistant.name || 'Unnamed')}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">${escapeHtml(assistant.model || 'Unknown')}</p>
+                    <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center gap-1">
+                        <button onclick="event.stopPropagation(); editAssistant('${assistant.id}')" class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Edit</button>
+                        <button onclick="event.stopPropagation(); deleteAssistant('${assistant.id}')" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+                    </div>
                 </div>
-                <div class="flex space-x-2 ml-4" onclick="event.stopPropagation()">
-                    <button onclick="viewAssistant('${id}')" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">View</button>
-                    <button onclick="editAssistant('${id}')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Edit</button>
-                    <button onclick="deleteAssistant('${id}')" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderListView(container, data) {
+    container.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('name')">
+                            <div class="flex items-center">Name <span class="ml-1">${getSortIndicator('name')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('id')">
+                            <div class="flex items-center">ID <span class="ml-1">${getSortIndicator('id')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('model')">
+                            <div class="flex items-center">Model <span class="ml-1">${getSortIndicator('model')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    ${data.map(assistant => `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onclick="viewAssistant('${assistant.id}')">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${escapeHtml(assistant.name || 'Unnamed')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono text-xs">${escapeHtml(assistant.id || '')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${escapeHtml(assistant.model || '—')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2" onclick="event.stopPropagation()">
+                                <button onclick="viewAssistant('${assistant.id}')" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">View</button>
+                                <button onclick="editAssistant('${assistant.id}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
+                                <button onclick="deleteAssistant('${assistant.id}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderColumnsView(container, data) {
+    const modelGroups = {};
+    data.forEach(assistant => {
+        const model = assistant.model || 'Unknown';
+        if (!modelGroups[model]) modelGroups[model] = [];
+        modelGroups[model].push(assistant);
+    });
+    
+    const sortedModels = Object.keys(modelGroups).sort();
+    
+    container.innerHTML = `
+        <div class="flex border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden" style="height: 500px;">
+            <!-- Models Column -->
+            <div class="w-56 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+                <div class="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700">Models</div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <div onclick="selectColumnModel('')" class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedModel === '' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
+                        <div class="flex justify-between items-center">
+                            <span>All Models</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${data.length}</span>
+                        </div>
+                    </div>
+                    ${sortedModels.map(model => `
+                        <div onclick="selectColumnModel('${escapeHtml(model)}')" class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedModel === model ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
+                            <div class="flex justify-between items-center">
+                                <span class="truncate text-sm">${escapeHtml(model)}</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">${modelGroups[model].length}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <!-- Assistants Column -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">Assistants</div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    ${(selectedModel ? modelGroups[selectedModel] || [] : data).map(assistant => `
+                        <div onclick="viewAssistant('${assistant.id}')" class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer group">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-medium text-gray-900 dark:text-white truncate">${escapeHtml(assistant.name || 'Unnamed')}</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">${escapeHtml(assistant.id || '')}</p>
+                                </div>
+                                <div class="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="event.stopPropagation(); editAssistant('${assistant.id}')" class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Edit</button>
+                                    <button onclick="event.stopPropagation(); deleteAssistant('${assistant.id}')" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         </div>
     `;
-    }).join('');
+}
+
+function selectColumnModel(model) {
+    selectedModel = model;
+    renderAssistants();
+}
+
+function renderGalleryView(container, data) {
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            ${data.map(assistant => `
+                <div onclick="viewAssistant('${assistant.id}')" class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                    <div class="h-20 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <span class="text-4xl font-bold text-white">${(assistant.name || '?').charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${escapeHtml(assistant.name || 'Unnamed')}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1 truncate">${escapeHtml(assistant.id || '')}</p>
+                        <div class="mt-3 space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Model</span>
+                                <span class="text-gray-900 dark:text-white truncate ml-2">${escapeHtml(assistant.model || 'Unknown')}</span>
+                            </div>
+                        </div>
+                        ${assistant.system_prompt ? `
+                            <div class="mt-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                                ${escapeHtml(assistant.system_prompt)}
+                            </div>
+                        ` : ''}
+                        <div class="mt-4 flex justify-between">
+                            <button onclick="event.stopPropagation(); viewAssistant('${assistant.id}')" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">View</button>
+                            <div class="flex gap-1">
+                                <button onclick="event.stopPropagation(); editAssistant('${assistant.id}')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Edit</button>
+                                <button onclick="event.stopPropagation(); deleteAssistant('${assistant.id}')" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 function showCreateModal() {
@@ -177,13 +436,10 @@ document.getElementById('assistantForm').addEventListener('submit', async (e) =>
     }
 });
 
-document.getElementById('searchInput').addEventListener('input', renderAssistants);
-
 async function viewAssistant(id) {
     const assistant = assistants.find(a => a.id === id);
     if (!assistant) return;
     
-    // Show assistant details with threads and memories
     const [threadsRes, memoriesRes] = await Promise.all([
         fetch(`/api/assistants/${id}/threads`).catch(() => ({ok: false})),
         fetch(`/api/assistants/${id}/memories`).catch(() => ({ok: false}))
@@ -200,18 +456,10 @@ async function viewAssistant(id) {
         memories = data.data || [];
     }
     
-    // Escape HTML for safe display
-    const escapeHtml = (text) => {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    };
-    
     const promptText = assistant.system_prompt || '';
     const promptId = `prompt-${id}`;
     const promptShort = promptText.length > 150 ? promptText.substring(0, 150) + '...' : promptText;
     
-    // Create modal content
     const modalContent = `
         <div class="mb-6 p-4 border-l-4 border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-r-lg">
             <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">${escapeHtml(assistant.name || 'Unnamed')}</h3>
@@ -246,7 +494,6 @@ async function viewAssistant(id) {
                         const content = m.content || 'No content';
                         const contentId = `memory-${id}-${idx}`;
                         const contentShort = content.length > 100 ? content.substring(0, 100) + '...' : content;
-                        // Use data attribute to store full content safely
                         const contentEscaped = escapeHtml(content).replace(/"/g, '&quot;').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
                         return `
                             <div class="p-3 border-2 border-purple-200 dark:border-purple-800 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
@@ -260,7 +507,6 @@ async function viewAssistant(id) {
         </div>
     `;
     
-    // Create and show modal
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
     modal.innerHTML = `
@@ -283,24 +529,19 @@ function toggleExpandFromData(elementId) {
     if (!element) return;
     
     const fullText = element.getAttribute('data-full-text') || '';
-    // Decode HTML entities and restore newlines
     const fullTextDecoded = fullText.replace(/&quot;/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
     const currentText = element.textContent.trim();
     const isExpanded = currentText.length > 150 && !currentText.endsWith('...');
     
     if (isExpanded) {
-        // Collapse
         const short = fullTextDecoded.length > 150 ? fullTextDecoded.substring(0, 150) + '...' : fullTextDecoded;
         element.textContent = short;
-        // Update the click to expand text if it exists
         const nextSibling = element.nextElementSibling;
         if (nextSibling && nextSibling.textContent.includes('collapse')) {
             nextSibling.textContent = '[Click to expand]';
         }
     } else {
-        // Expand
         element.textContent = fullTextDecoded;
-        // Update the click to expand text if it exists
         const nextSibling = element.nextElementSibling;
         if (nextSibling && nextSibling.textContent.includes('expand')) {
             nextSibling.textContent = '[Click to collapse]';
@@ -311,11 +552,9 @@ function toggleExpandFromData(elementId) {
 function viewThreadMessages(threadId, threadTitle) {
     if (!threadId) return;
     
-    // Fetch thread details
     fetch(`/api/threads/${threadId}`)
         .then(res => res.json())
         .then(thread => {
-            // Create messages modal
             const messages = thread.messages || [];
             const messagesHtml = messages.length > 0 ? messages.map(msg => `
                 <div class="p-3 mb-2 border-l-4 ${msg.role === 'user' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : msg.role === 'assistant' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-500 bg-gray-50 dark:bg-gray-900/20'} rounded-r-lg">
@@ -353,13 +592,11 @@ function viewThreadMessages(threadId, threadTitle) {
         });
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+document.getElementById('searchInput').addEventListener('input', renderAssistants);
 
+// Initialize
+currentViewMode = getViewMode();
+updateViewModeButtons();
 loadAssistants();
 </script>
 {% endblock %}

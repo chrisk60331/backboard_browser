@@ -84,9 +84,7 @@ def get_assistant_threads(assistant_id):
     """Get threads for an assistant."""
     try:
         service = get_service()
-        threads = service.list_threads()
-        # Filter threads by assistant_id if SDK provides it
-        # For now, return all threads
+        threads = service.list_threads(assistant_id=assistant_id)
         return jsonify({'data': [t.model_dump() for t in threads]})
     except ValueError as e:
         return jsonify({'error': str(e)}), 401

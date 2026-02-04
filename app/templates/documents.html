@@ -9,18 +9,39 @@
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Documents</h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Manage your documents</p>
         </div>
-        <button onclick="showCreateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            Upload Document
-        </button>
+        <div class="flex items-center gap-4">
+            <button onclick="showCreateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Upload Document
+            </button>
+            <!-- View Mode Selector -->
+            <div class="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                <button onclick="setViewMode('icons')" id="viewmode-icons" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Icons">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                </button>
+                <button onclick="setViewMode('list')" id="viewmode-list" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="List">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                </button>
+                <button onclick="setViewMode('columns')" id="viewmode-columns" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Columns">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                </button>
+                <button onclick="setViewMode('gallery')" id="viewmode-gallery" class="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Gallery">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         <div class="px-4 py-5 sm:p-6">
-            <div class="mb-4">
+            <div class="mb-4 space-y-3">
                 <input type="text" id="searchInput" placeholder="Search documents..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                <div class="flex items-center space-x-2">
+                    <div id="loadingSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                    <span id="documentCount" class="text-sm text-gray-600 dark:text-gray-400"></span>
+                </div>
             </div>
-            <div id="documentsList" class="space-y-4">
-                <!-- Documents will be loaded here -->
+            <div id="documentsContainer">
+                <!-- Documents will be loaded here based on view mode -->
             </div>
         </div>
     </div>
@@ -51,47 +72,78 @@
 
 <script>
 let documents = [];
+let currentViewMode = 'list';
+let sortColumn = 'name';
+let sortDirection = 'asc';
+let selectedType = '';
+const PAGE_KEY = 'viewmode_documents';
 
-async function loadDocuments() {
-    try {
-        const response = await fetch('/api/documents');
-        if (response.ok) {
-            const data = await response.json();
-            documents = data.data || [];
-            renderDocuments();
-        }
-    } catch (error) {
-        console.error('Error loading documents:', error);
-    }
+// View Mode Functions
+function getViewMode() {
+    return localStorage.getItem(PAGE_KEY) || 'list';
 }
 
-function renderDocuments() {
-    const container = document.getElementById('documentsList');
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = documents.filter(d => 
-        d.name?.toLowerCase().includes(searchTerm) ||
-        d.type?.toLowerCase().includes(searchTerm)
-    );
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem(PAGE_KEY, mode);
+    updateViewModeButtons();
+    renderDocuments();
+}
 
-    if (filtered.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No documents found</p>';
-        return;
+function updateViewModeButtons() {
+    const modes = ['icons', 'list', 'columns', 'gallery'];
+    modes.forEach(mode => {
+        const btn = document.getElementById(`viewmode-${mode}`);
+        if (btn) {
+            if (mode === currentViewMode) {
+                btn.classList.add('bg-white', 'dark:bg-gray-600', 'shadow-sm');
+                btn.classList.remove('hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            } else {
+                btn.classList.remove('bg-white', 'dark:bg-gray-600', 'shadow-sm');
+                btn.classList.add('hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            }
+        }
+    });
+}
+
+// Sort Functions
+function sortBy(column) {
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'asc';
     }
+    renderDocuments();
+}
 
-    container.innerHTML = filtered.map(doc => `
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${doc.name || 'Unnamed'}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Type: ${doc.type || 'N/A'}</p>
-                    ${doc.size ? `<p class="text-sm text-gray-600 dark:text-gray-400">Size: ${formatBytes(doc.size)}</p>` : ''}
-                    ${doc.uploaded_at ? `<p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Uploaded: ${new Date(doc.uploaded_at).toLocaleString()}</p>` : ''}
-                    ${doc.url ? `<a href="${doc.url}" target="_blank" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2 inline-block">View</a>` : ''}
-                </div>
-                <button onclick="deleteDocument('${doc.id}')" class="ml-4 px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
-            </div>
-        </div>
-    `).join('');
+function getSortIndicator(column) {
+    if (sortColumn !== column) return '';
+    return sortDirection === 'asc' ? '↑' : '↓';
+}
+
+function sortData(data) {
+    return [...data].sort((a, b) => {
+        let aVal = a[sortColumn];
+        let bVal = b[sortColumn];
+        
+        if (aVal == null) aVal = '';
+        if (bVal == null) bVal = '';
+        
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        
+        // Handle dates
+        if (sortColumn === 'uploaded_at') {
+            aVal = new Date(aVal || 0).getTime();
+            bVal = new Date(bVal || 0).getTime();
+            return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        
+        const comparison = String(aVal).localeCompare(String(bVal));
+        return sortDirection === 'asc' ? comparison : -comparison;
+    });
 }
 
 function formatBytes(bytes) {
@@ -100,6 +152,253 @@ function formatBytes(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+function getFileIcon(type) {
+    const iconMap = {
+        'pdf': '📄',
+        'doc': '📝',
+        'docx': '📝',
+        'txt': '📃',
+        'image': '🖼️',
+        'png': '🖼️',
+        'jpg': '🖼️',
+        'jpeg': '🖼️',
+        'gif': '🖼️',
+        'video': '🎬',
+        'mp4': '🎬',
+        'audio': '🎵',
+        'mp3': '🎵',
+        'csv': '📊',
+        'xlsx': '📊',
+        'json': '📋',
+        'xml': '📋'
+    };
+    return iconMap[type?.toLowerCase()] || '📁';
+}
+
+async function loadDocuments() {
+    const spinner = document.getElementById('loadingSpinner');
+    const countEl = document.getElementById('documentCount');
+    const container = document.getElementById('documentsContainer');
+    
+    spinner.classList.remove('hidden');
+    countEl.textContent = 'Loading documents...';
+    container.innerHTML = '<div class="flex items-center justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div><span class="ml-3 text-gray-600 dark:text-gray-400">Loading documents...</span></div>';
+    
+    try {
+        const response = await fetch('/api/documents');
+        if (response.ok) {
+            const data = await response.json();
+            documents = data.data || [];
+            renderDocuments();
+        } else {
+            container.innerHTML = '<p class="text-red-500 py-4">Failed to load documents</p>';
+        }
+    } catch (error) {
+        console.error('Error loading documents:', error);
+        container.innerHTML = '<p class="text-red-500 py-4">Error loading documents</p>';
+    } finally {
+        spinner.classList.add('hidden');
+    }
+}
+
+function getFilteredDocuments() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = documents.filter(d => 
+        d.name?.toLowerCase().includes(searchTerm) ||
+        d.type?.toLowerCase().includes(searchTerm)
+    );
+    return sortData(filtered);
+}
+
+function renderDocuments() {
+    const container = document.getElementById('documentsContainer');
+    const countEl = document.getElementById('documentCount');
+    const filtered = getFilteredDocuments();
+    
+    countEl.textContent = `Showing ${filtered.length} of ${documents.length} documents`;
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 py-4">No documents found</p>';
+        return;
+    }
+
+    switch (currentViewMode) {
+        case 'icons':
+            renderIconsView(container, filtered);
+            break;
+        case 'list':
+            renderListView(container, filtered);
+            break;
+        case 'columns':
+            renderColumnsView(container, filtered);
+            break;
+        case 'gallery':
+            renderGalleryView(container, filtered);
+            break;
+        default:
+            renderListView(container, filtered);
+    }
+}
+
+function renderIconsView(container, data) {
+    container.innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            ${data.map(doc => `
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md transition-all cursor-pointer text-center group">
+                    <div class="text-4xl mb-3">${getFileIcon(doc.type)}</div>
+                    <h3 class="font-medium text-gray-900 dark:text-white text-sm truncate" title="${doc.name || 'Unnamed'}">${doc.name || 'Unnamed'}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${doc.type || 'Unknown'}</p>
+                    ${doc.size ? `<p class="text-xs text-gray-400 dark:text-gray-500">${formatBytes(doc.size)}</p>` : ''}
+                    <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="event.stopPropagation(); deleteDocument('${doc.id}')" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderListView(container, data) {
+    container.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('name')">
+                            <div class="flex items-center">Name <span class="ml-1">${getSortIndicator('name')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('type')">
+                            <div class="flex items-center">Type <span class="ml-1">${getSortIndicator('type')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('size')">
+                            <div class="flex items-center">Size <span class="ml-1">${getSortIndicator('size')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" onclick="sortBy('uploaded_at')">
+                            <div class="flex items-center">Uploaded <span class="ml-1">${getSortIndicator('uploaded_at')}</span></div>
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    ${data.map(doc => `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-3">${getFileIcon(doc.type)}</span>
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white">${doc.name || 'Unnamed'}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${doc.type || '—'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${doc.size ? formatBytes(doc.size) : '—'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString() : '—'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                ${doc.url ? `<a href="${doc.url}" target="_blank" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">View</a>` : ''}
+                                <button onclick="deleteDocument('${doc.id}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderColumnsView(container, data) {
+    const typeGroups = {};
+    data.forEach(doc => {
+        const type = doc.type || 'Unknown';
+        if (!typeGroups[type]) typeGroups[type] = [];
+        typeGroups[type].push(doc);
+    });
+    
+    const sortedTypes = Object.keys(typeGroups).sort();
+    
+    container.innerHTML = `
+        <div class="flex border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden" style="height: 500px;">
+            <!-- Types Column -->
+            <div class="w-48 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+                <div class="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700">Types</div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <div onclick="selectColumnType('')" class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedType === '' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
+                        <div class="flex justify-between items-center">
+                            <span>All Types</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${data.length}</span>
+                        </div>
+                    </div>
+                    ${sortedTypes.map(type => `
+                        <div onclick="selectColumnType('${type}')" class="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedType === type ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}">
+                            <div class="flex justify-between items-center">
+                                <span class="truncate">${type}</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">${typeGroups[type].length}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <!-- Documents Column -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">Documents</div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    ${(selectedType ? typeGroups[selectedType] || [] : data).map(doc => `
+                        <div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 group">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center flex-1 min-w-0">
+                                    <span class="text-2xl mr-3">${getFileIcon(doc.type)}</span>
+                                    <div class="min-w-0">
+                                        <h4 class="font-medium text-gray-900 dark:text-white truncate">${doc.name || 'Unnamed'}</h4>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">${doc.size ? formatBytes(doc.size) : ''} ${doc.uploaded_at ? '• ' + new Date(doc.uploaded_at).toLocaleDateString() : ''}</p>
+                                    </div>
+                                </div>
+                                <button onclick="deleteDocument('${doc.id}')" class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function selectColumnType(type) {
+    selectedType = type;
+    renderDocuments();
+}
+
+function renderGalleryView(container, data) {
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            ${data.map(doc => `
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                    <div class="h-32 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                        <span class="text-6xl">${getFileIcon(doc.type)}</span>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate">${doc.name || 'Unnamed'}</h3>
+                        <div class="mt-3 space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Type</span>
+                                <span class="text-gray-900 dark:text-white">${doc.type || 'Unknown'}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Size</span>
+                                <span class="text-gray-900 dark:text-white">${doc.size ? formatBytes(doc.size) : '—'}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">Uploaded</span>
+                                <span class="text-gray-900 dark:text-white">${doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : '—'}</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between">
+                            ${doc.url ? `<a href="${doc.url}" target="_blank" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">View</a>` : '<span></span>'}
+                            <button onclick="deleteDocument('${doc.id}')" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 function showCreateModal() {
@@ -158,6 +457,9 @@ document.getElementById('documentForm').addEventListener('submit', async (e) => 
 
 document.getElementById('searchInput').addEventListener('input', renderDocuments);
 
+// Initialize
+currentViewMode = getViewMode();
+updateViewModeButtons();
 loadDocuments();
 </script>
 {% endblock %}

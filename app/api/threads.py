@@ -15,13 +15,27 @@ def get_service():
 
 @threads_bp.route('/api/threads', methods=['GET'])
 def list_threads():
-    """List all threads."""
+    """List all threads with pagination to fetch all."""
     try:
         service = get_service()
-        threads = service.list_threads()
+        
+        # Paginate through all threads
+        all_threads = []
+        skip = 0
+        batch_size = 1000
+        
+        while True:
+            batch = service.list_threads(skip=skip, limit=batch_size)
+            if not batch:
+                break
+            all_threads.extend(batch)
+            if len(batch) < batch_size:
+                break
+            skip += batch_size
+        
         # Use model_dump with mode='json' to handle validation issues
         result = []
-        for thread in threads:
+        for thread in all_threads:
             try:
                 result.append(thread.model_dump(mode='json'))
             except Exception as e:

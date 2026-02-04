@@ -116,6 +116,28 @@ def search_memory():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@memory_bp.route('/api/memory/<memory_id>', methods=['PUT'])
+def update_memory(memory_id):
+    """Update a memory (delete and recreate with new content)."""
+    try:
+        service = get_service()
+        data = request.get_json()
+        assistant_id = data.get('assistant_id')
+        if not assistant_id:
+            return jsonify({'error': 'assistant_id is required'}), 400
+        
+        # Delete the old memory
+        service.delete_memory(memory_id, assistant_id)
+        
+        # Create new memory with updated content
+        memory_create = MemoryCreate(**{k: v for k, v in data.items() if k != 'assistant_id'})
+        memory = service.store_memory(memory_create, assistant_id)
+        return jsonify(memory.model_dump())
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @memory_bp.route('/api/memory/<memory_id>', methods=['DELETE'])
 def delete_memory(memory_id):
     """Delete a memory."""
