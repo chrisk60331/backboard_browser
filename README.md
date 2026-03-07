@@ -2,6 +2,8 @@
 
 A Flask web application for browsing and managing Backboard.io resources including assistants, memory, models, documents, and threads.
 
+![Screenshot](static/image.png)
+
 ## Features
 
 - **Dashboard**: Overview of all resources with counts
@@ -65,7 +67,8 @@ bb_browser/
 │   ├── models/       # Pydantic data models
 │   ├── services/     # Backboard service layer
 │   └── templates/    # Jinja2 templates
-├── static/           # Static files (CSS)
+├── static/           # Static files (CSS, images)
+│   └── image.png     # App/screenshot image
 ├── pyproject.toml    # Dependencies
 └── start.sh          # Startup script
 ```
