@@ -8,6 +8,7 @@ A Flask web application for browsing and managing Backboard.io resources includi
 
 - **Dashboard**: Overview of all resources with counts
 - **Assistants**: Full CRUD operations for AI assistants
+- **Chat**: Have real conversations with your assistants — pick one, open a thread, and go
 - **Memory**: Store, search, and retrieve memories
 - **Models**: Browse available AI models
 - **Documents**: Upload and manage documents
@@ -46,10 +47,7 @@ The application will be available at `http://127.0.0.1:5000`
 
 ## Configuration
 
-Set your Backboard API key either:
-- Via the UI (prompted on first visit)
-- Environment variable: `BACKBOARD_API_KEY`
-- Flask config: `BACKBOARD_API_KEY`
+Set your Backboard API key via the UI (prompted on first visit).
 
 ## Architecture
 
