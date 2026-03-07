@@ -4,10 +4,8 @@
 unset BACKBOARD_API_KEY
 unset FLASK_DEBUG
 
-
 echo "Using uv to install dependencies..."
 uv pip install -e .
-
 
 # Start Flask development server
 export FLASK_APP=app:create_app

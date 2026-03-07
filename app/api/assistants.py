@@ -19,9 +19,25 @@ def list_assistants():
     try:
         service = get_service()
         skip = int(request.args.get('skip', 0))
-        limit = int(request.args.get('limit', 1000))  # Default to 1000 to get all
+        limit = int(request.args.get('limit', 0))
         assistants = service.list_assistants(skip=skip, limit=limit)
         return jsonify({'data': [a.model_dump() for a in assistants], 'count': len(assistants)})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@assistants_bp.route('/api/assistants/counts', methods=['POST'])
+def get_assistant_counts():
+    """Get thread and memory counts for all assistants (cached)."""
+    try:
+        service = get_service()
+        data = request.get_json()
+        assistant_ids = data.get('assistant_ids', [])
+        if not assistant_ids:
+            return jsonify({'data': {}})
+        counts = service.get_assistant_counts(assistant_ids)
+        return jsonify({'data': counts})
     except ValueError as e:
         return jsonify({'error': str(e)}), 401
     except Exception as e:

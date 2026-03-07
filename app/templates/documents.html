@@ -187,7 +187,10 @@ async function loadDocuments() {
     container.innerHTML = '<div class="flex items-center justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div><span class="ml-3 text-gray-600 dark:text-gray-400">Loading documents...</span></div>';
     
     try {
-        const response = await fetch('/api/documents');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 900000);
+        const response = await fetch('/api/documents', { signal: controller.signal });
+        clearTimeout(timeoutId);
         if (response.ok) {
             const data = await response.json();
             documents = data.data || [];
@@ -197,7 +200,11 @@ async function loadDocuments() {
         }
     } catch (error) {
         console.error('Error loading documents:', error);
-        container.innerHTML = '<p class="text-red-500 py-4">Error loading documents</p>';
+        if (error.name === 'AbortError') {
+            container.innerHTML = '<p class="text-red-500 py-4">Request timed out. Try again or use a smaller workspace.</p>';
+        } else {
+            container.innerHTML = '<p class="text-red-500 py-4">Error loading documents</p>';
+        }
     } finally {
         spinner.classList.add('hidden');
     }

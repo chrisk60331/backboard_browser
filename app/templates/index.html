@@ -4,6 +4,17 @@
 
 {% block content %}
 <div class="px-4 py-8 sm:px-0">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Your Backboard.io workspace at a glance</p>
+        </div>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                     bg-bb-blue/10 dark:bg-bb-blue/20 text-bb-blue dark:text-blue-300
+                     border border-bb-blue/20 dark:border-bb-blue/30">
+            v1.0.0
+        </span>
+    </div>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <!-- Assistants Card -->
         <a href="/assistants" class="group block">

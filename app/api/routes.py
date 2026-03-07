@@ -61,6 +61,7 @@ from app.api.models import models_bp
 from app.api.documents import documents_bp
 from app.api.threads import threads_bp
 from app.api.cache import cache_bp
+from app.api.chat import chat_bp
 
 # Register blueprints
 api_bp.register_blueprint(assistants_bp)
@@ -69,3 +70,4 @@ api_bp.register_blueprint(models_bp)
 api_bp.register_blueprint(documents_bp)
 api_bp.register_blueprint(threads_bp)
 api_bp.register_blueprint(cache_bp)
+api_bp.register_blueprint(chat_bp)
