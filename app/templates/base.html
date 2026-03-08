@@ -320,6 +320,28 @@
         }
         #chatEmptyIllustration { animation: empty-float 3.2s ease-in-out infinite; }
 
+        /* Capability tiles — slot-machine slide (no backface-visibility needed) */
+        .cap-tile {
+            position: relative; height: 82px; cursor: pointer;
+            border-radius: 12px; overflow: hidden;
+        }
+        .cap-face {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 12px;
+        }
+        @keyframes cap-out { from { transform: translateY(0);    opacity: 1; } to { transform: translateY(-115%); opacity: 0; } }
+        @keyframes cap-in  { from { transform: translateY(115%);  opacity: 0; } to { transform: translateY(0);    opacity: 1; } }
+        .cap-face.cap-leaving  { animation: cap-out 0.42s ease forwards; }
+        .cap-face.cap-entering { animation: cap-in  0.42s ease 0.16s both; }
+        /* Tile hover glow */
+        .cap-tile:hover { filter: brightness(1.05); }
+        /* Fully opaque computed colors (rgba tint × white/dark base) — no bleed-through */
+        .cap-face.cap-ws   { background: #eef5ff; border: 1px solid #c5deff; }
+        .cap-face.cap-docs { background: #f2f1fe; border: 1px solid #c9c8f8; }
+        .dark .cap-face.cap-ws   { background: #1c2a3e; border-color: #2a4060; }
+        .dark .cap-face.cap-docs { background: #222236; border-color: #363660; }
+
         /* Typewriter cursor */
         @keyframes blink { 50% { opacity: 0; } }
         .chat-cursor::after {
@@ -419,54 +441,24 @@
         <div id="chatMessages"
             class="flex-1 overflow-y-auto px-4 py-3 space-y-3 scroll-smooth">
 
-            <!-- Empty state -->
-            <div id="chatEmptyState" class="h-full flex flex-col items-center justify-center text-center px-2 py-6">
-                <svg id="chatEmptyIllustration" class="w-16 h-16 mb-4 text-bb-blue/60" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 64 64">
-                    <circle cx="32" cy="32" r="22" stroke-dasharray="4 3" opacity="0.4"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                        d="M24 26a8 8 0 0 1 16 0c0 5-4 8-4 11H28c0-3-4-6-4-11Z" opacity="0.7"/>
-                    <path stroke-linecap="round" stroke-width="1.8" d="M28 40h8M29 43h6" opacity="0.5"/>
-                    <circle cx="20" cy="18" r="2" fill="currentColor" opacity="0.3"/>
-                    <circle cx="44" cy="20" r="1.5" fill="currentColor" opacity="0.3"/>
-                    <circle cx="46" cy="44" r="2" fill="currentColor" opacity="0.25"/>
-                    <circle cx="18" cy="46" r="1.5" fill="currentColor" opacity="0.25"/>
-                </svg>
-                <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Ask me anything about your workspace</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">I have access to your assistants, threads,<br>documents, and memories.</p>
-                <div class="grid grid-cols-2 gap-2 w-full max-w-[280px]">
-                    <button class="chat-chip text-left px-3 py-2 rounded-xl text-xs font-medium
-                                   bg-bb-blue/8 dark:bg-bb-blue/15 text-bb-blue dark:text-blue-300
-                                   border border-bb-blue/20 dark:border-bb-blue/30
-                                   hover:bg-bb-blue/15 dark:hover:bg-bb-blue/25
-                                   transition-colors duration-150 leading-snug"
-                           data-prompt="List all my assistants with their names and models.">
-                        🤖 List my assistants
-                    </button>
-                    <button class="chat-chip text-left px-3 py-2 rounded-xl text-xs font-medium
-                                   bg-bb-blue/8 dark:bg-bb-blue/15 text-bb-blue dark:text-blue-300
-                                   border border-bb-blue/20 dark:border-bb-blue/30
-                                   hover:bg-bb-blue/15 dark:hover:bg-bb-blue/25
-                                   transition-colors duration-150 leading-snug"
-                           data-prompt="What documents do I have? List them with their status.">
-                        📄 My documents
-                    </button>
-                    <button class="chat-chip text-left px-3 py-2 rounded-xl text-xs font-medium
-                                   bg-bb-blue/8 dark:bg-bb-blue/15 text-bb-blue dark:text-blue-300
-                                   border border-bb-blue/20 dark:border-bb-blue/30
-                                   hover:bg-bb-blue/15 dark:hover:bg-bb-blue/25
-                                   transition-colors duration-150 leading-snug"
-                           data-prompt="Show me my recent conversation threads.">
-                        💬 Recent threads
-                    </button>
-                    <button class="chat-chip text-left px-3 py-2 rounded-xl text-xs font-medium
-                                   bg-bb-blue/8 dark:bg-bb-blue/15 text-bb-blue dark:text-blue-300
-                                   border border-bb-blue/20 dark:border-bb-blue/30
-                                   hover:bg-bb-blue/15 dark:hover:bg-bb-blue/25
-                                   transition-colors duration-150 leading-snug"
-                           data-prompt="Give me a summary of my workspace — how many assistants, threads, documents, and memories I have.">
-                        📊 Workspace summary
-                    </button>
+            <!-- Empty state — animated capability tiles -->
+            <div id="chatEmptyState" class="h-full flex flex-col justify-center px-3 py-4 gap-4">
+                <!-- Header -->
+                <div class="text-center">
+                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">What can I help with?</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Your workspace · Backboard docs</p>
                 </div>
+
+                <!-- Slot tiles 2×2 -->
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="cap-tile" data-tile="0"></div>
+                    <div class="cap-tile" data-tile="1"></div>
+                    <div class="cap-tile" data-tile="2"></div>
+                    <div class="cap-tile" data-tile="3"></div>
+                </div>
+
+                <!-- Progress dots -->
+                <div id="capDots" class="flex justify-center gap-1.5"></div>
             </div>
         </div>
 
@@ -558,6 +550,7 @@
             iconClose.classList.remove('hidden');
             input.focus();
             if (threadId) loadHistory();
+            startTileCycling();
         }
 
         function closeDrawer() {
@@ -816,13 +809,7 @@
             }
         });
 
-        // Quick-action chips
-        document.querySelectorAll('.chat-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const prompt = chip.dataset.prompt;
-                if (prompt && !chatStreaming) send(prompt);
-            });
-        });
+        // (quick-action chips replaced by flip tiles above)
 
         // ── Utils ─────────────────────────────────────────────────────
 
@@ -849,9 +836,126 @@
                 search_memories:     'Searching memories',
                 list_documents:      'Listing documents',
                 get_assistant_counts:'Getting counts',
+                docs_search:         'Searching docs',
+                docs_list_pages:     'Listing doc pages',
+                docs_get_page:       'Loading doc page',
             };
             return map[toolName] || toolName;
         }
+
+        // ── Capability tiles (slot-machine slide) ─────────────────────
+
+        const CAPS = [
+            // Workspace
+            { icon: '🤖', title: 'My Assistants',    desc: 'See all your AI assistants',      kind: 'ws',   prompt: 'List all my assistants with their names, models, and tool counts.' },
+            { icon: '💬', title: 'Thread History',   desc: 'Browse your conversations',       kind: 'ws',   prompt: 'Show me my recent conversation threads.' },
+            { icon: '🧠', title: 'Search Memories',  desc: 'Find stored knowledge',           kind: 'ws',   prompt: 'What memories do my assistants have stored? List them.' },
+            { icon: '📄', title: 'Documents',         desc: 'View files and their status',     kind: 'ws',   prompt: 'What documents do I have? List them with their status.' },
+            { icon: '📊', title: 'Workspace Stats',  desc: 'Counts and usage at a glance',   kind: 'ws',   prompt: 'Give me a full summary of my Backboard workspace — how many assistants, threads, documents, and memories I have.' },
+            { icon: '🔍', title: 'Explore Assistant', desc: 'Drill into a specific assistant', kind: 'ws',   prompt: 'List my assistants, then get the full details of the first one.' },
+            // Docs
+            { icon: '📚', title: 'Search Docs',      desc: 'Search Backboard documentation', kind: 'docs', prompt: 'Search the Backboard docs for: how to create an assistant and add tools.' },
+            { icon: '📖', title: 'Browse Guides',    desc: 'All available doc pages',        kind: 'docs', prompt: 'List all the Backboard documentation pages available.' },
+            { icon: '🚀', title: 'Getting Started',  desc: 'New to Backboard? Start here',   kind: 'docs', prompt: 'Search the Backboard docs for getting started guide.' },
+            { icon: '💡', title: 'Best Practices',   desc: 'Architecture and patterns',      kind: 'docs', prompt: 'Search the Backboard docs for best practices and architecture patterns.' },
+            { icon: '🛠️', title: 'Build Something',  desc: 'Implementation guidance',        kind: 'docs', prompt: 'Search the Backboard docs for tool calling and how to build a chatbot.' },
+        ];
+
+        const TILE_STARTS = [0, 6, 3, 9];
+        const tileEls     = document.querySelectorAll('.cap-tile');
+        const tileIdxs    = TILE_STARTS.slice();
+        const SLOT_MS     = 3640;
+        const STAGGER_MS  = 910;
+
+        function makeFace(cap) {
+            const el = document.createElement('div');
+            el.className = `cap-face ${cap.kind === 'docs' ? 'cap-docs' : 'cap-ws'}`;
+            el.innerHTML = `
+                <span class="text-2xl leading-none shrink-0">${cap.icon}</span>
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold leading-tight truncate
+                               ${cap.kind === 'docs' ? 'text-indigo-700 dark:text-indigo-300' : 'text-bb-blue dark:text-blue-300'}">${cap.title}</p>
+                    <p class="text-[10px] leading-snug text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">${cap.desc}</p>
+                </div>`;
+            return el;
+        }
+
+        function initTiles() {
+            tileEls.forEach((tile, i) => {
+                const cap = CAPS[tileIdxs[i] % CAPS.length];
+                tile.appendChild(makeFace(cap));
+                tile.dataset.capIdx = tileIdxs[i] % CAPS.length;
+
+                tile.addEventListener('click', () => {
+                    const idx = parseInt(tile.dataset.capIdx, 10);
+                    if (!chatStreaming) send(CAPS[idx].prompt);
+                });
+            });
+            buildDots();
+        }
+
+        function buildDots() {
+            const dotsEl = document.getElementById('capDots');
+            if (!dotsEl) return;
+            dotsEl.innerHTML = '';
+            CAPS.forEach((_, i) => {
+                const d = document.createElement('span');
+                d.className = 'w-1.5 h-1.5 rounded-full transition-all duration-300 ' +
+                    (i < 6 ? 'bg-bb-blue/25' : 'bg-indigo-400/25');
+                d.dataset.dotIdx = i;
+                dotsEl.appendChild(d);
+            });
+            updateDots();
+        }
+
+        function updateDots() {
+            const dotsEl = document.getElementById('capDots');
+            if (!dotsEl) return;
+            const active = new Set(Array.from(tileEls).map(t => parseInt(t.dataset.capIdx, 10)));
+            dotsEl.querySelectorAll('span').forEach(d => {
+                const i = parseInt(d.dataset.dotIdx, 10);
+                d.className = 'w-1.5 h-1.5 rounded-full transition-all duration-300 ' +
+                    (active.has(i)
+                        ? (i < 6 ? 'bg-bb-blue scale-125' : 'bg-indigo-500 scale-125')
+                        : (i < 6 ? 'bg-bb-blue/25' : 'bg-indigo-400/25'));
+            });
+        }
+
+        function slotTile(tile, tilePos) {
+            const nextIdx = (tileIdxs[tilePos] + 1) % CAPS.length;
+            const oldFace = tile.querySelector('.cap-face');
+
+            // New face slides in from below
+            const newFace = makeFace(CAPS[nextIdx]);
+            newFace.classList.add('cap-entering');
+            tile.appendChild(newFace);
+
+            // Old face slides out upward
+            if (oldFace) {
+                oldFace.classList.add('cap-leaving');
+                setTimeout(() => oldFace.remove(), 600);
+            }
+
+            tileIdxs[tilePos] = nextIdx;
+            tile.dataset.capIdx = nextIdx;
+            updateDots();
+        }
+
+        let _tileTimers = [];
+        function startTileCycling() {
+            _tileTimers.forEach(t => { clearTimeout(t); clearInterval(t); });
+            _tileTimers = [];
+            tileEls.forEach((tile, i) => {
+                const t = setTimeout(() => {
+                    const iv = setInterval(() => slotTile(tile, i), SLOT_MS);
+                    _tileTimers.push(iv);
+                }, i * STAGGER_MS);
+                _tileTimers.push(t);
+            });
+        }
+
+        initTiles();
+        startTileCycling();
 
         // ── Init ──────────────────────────────────────────────────────
         setStatus(true);

@@ -140,7 +140,97 @@ _BROWSER_TOOLS = [
             },
         },
     },
+    # ── Backboard Docs (MCP) ──────────────────────────────────────────────
+    {
+        "type": "function",
+        "function": {
+            "name": "docs_search",
+            "description": "Search across all Backboard documentation pages for relevant content. Use this to answer implementation questions, look up API details, or find guides.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "The search query"},
+                    "limit": {"type": "integer", "description": "Max results to return (default 5)"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "docs_list_pages",
+            "description": "List all available Backboard documentation pages with their path, title, and description.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "docs_get_page",
+            "description": "Retrieve the full content of a specific Backboard documentation page by its path.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": 'The page path, e.g. "getting-started" or "api/authentication"'},
+                },
+                "required": ["path"],
+            },
+        },
+    },
 ]
+
+# ---------------------------------------------------------------------------
+# MCP docs client
+# ---------------------------------------------------------------------------
+
+_MCP_DOCS_URL = "https://backboard-docs.docsalot.dev/api/mcp"
+
+
+def _call_mcp_docs(tool_name: str, arguments: dict) -> str:
+    """Call the backboard-docs MCP server and return the text result."""
+    import requests
+
+    payload = {
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "tools/call",
+        "params": {"name": tool_name, "arguments": arguments},
+    }
+    try:
+        res = requests.post(
+            _MCP_DOCS_URL,
+            json=payload,
+            headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream"},
+            timeout=20,
+        )
+        content_type = res.headers.get("content-type", "")
+        if "text/event-stream" in content_type:
+            # SSE: scan lines for the result event
+            for line in res.text.splitlines():
+                if line.startswith("data:"):
+                    try:
+                        data = json.loads(line[5:].strip())
+                        if "result" in data:
+                            chunks = data["result"].get("content", [])
+                            texts = [c["text"] for c in chunks if c.get("type") == "text"]
+                            return "\n".join(texts)
+                    except Exception:
+                        pass
+            return res.text
+        else:
+            data = res.json()
+            if "error" in data:
+                return json.dumps({"error": data["error"]})
+            chunks = data.get("result", {}).get("content", [])
+            texts = [c["text"] for c in chunks if c.get("type") == "text"]
+            return "\n".join(texts) if texts else json.dumps(data)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
 
 # ---------------------------------------------------------------------------
 # Lazy per-API-key browser assistant (in-memory cache, no .env writes)
@@ -301,6 +391,16 @@ def _execute_tool(name: str, args: dict, service) -> str:
             counts = service.get_assistant_counts(args["assistant_ids"])
             return json.dumps(counts, default=str)
 
+        # ── Docs MCP tools ────────────────────────────────────────────
+        elif name == "docs_search":
+            return _call_mcp_docs("search_docs", {"query": args["query"], "limit": args.get("limit", 5)})
+
+        elif name == "docs_list_pages":
+            return _call_mcp_docs("list_pages", {})
+
+        elif name == "docs_get_page":
+            return _call_mcp_docs("get_page", {"path": args["path"]})
+
         else:
             return json.dumps({"error": f"Unknown tool: {name}"})
 
@@ -328,6 +428,12 @@ def _tool_summary(name: str, result_str: str) -> str:
             return f"{result.get('count', 0)} documents"
         elif name == "get_assistant_counts":
             return f"{len(result)} assistants"
+        elif name == "docs_search":
+            return "docs found"
+        elif name == "docs_list_pages":
+            return "pages listed"
+        elif name == "docs_get_page":
+            return "page loaded"
         return "done"
     except Exception:
         return "done"
